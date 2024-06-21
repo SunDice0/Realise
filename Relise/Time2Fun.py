@@ -1,82 +1,110 @@
 import pygame
 import sys
 
+
 # Ініціалізація Pygame
 pygame.init()
 
-# Налаштування кольорів
+# Розміри вікна
+WIDTH, HEIGHT = 600, 600
+LINE_WIDTH = 15
+BOARD_ROWS = 3
+BOARD_COLS = 3
+SQUARE_SIZE = WIDTH // BOARD_COLS
+
+# Кольори
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-BLUE = (0, 0, 255)
 
-# Налаштування розміру екрану
-size = width, height = 300, 300
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption("Хрестики-Нолики")
+# Створення вікна
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption('Хрестики-нулики')
 
-# Налаштування розміру клітинок
-cell_size = width // 3
+# Ігрова дошка
+board = [[None]*BOARD_COLS for _ in range(BOARD_ROWS)]
 
-# Створення порожньої ігрової дошки
-board = [["" for _ in range(3)] for _ in range(3)]
+# Малювання ліній
+def draw_lines():
+    # Горизонтальні лінії
+    for row in range(1, BOARD_ROWS):
+        pygame.draw.line(screen, BLACK, (0, row * SQUARE_SIZE), (WIDTH, row * SQUARE_SIZE), LINE_WIDTH)
 
-# Встановлення початкового гравця
-current_player = "X"
+    # Вертикальні лінії
+    for col in range(1, BOARD_COLS):
+        pygame.draw.line(screen, BLACK, (col * SQUARE_SIZE, 0), (col * SQUARE_SIZE, HEIGHT), LINE_WIDTH)
 
-# Функція для малювання дошки
-def draw_board():
+# Малювання фігур
+def draw_figures():
+    for row in range(BOARD_ROWS):
+        for col in range(BOARD_COLS):
+            if board[row][col] == 'X':
+                pygame.draw.line(screen, RED, (col * SQUARE_SIZE + SQUARE_SIZE//4, row * SQUARE_SIZE + SQUARE_SIZE//4),
+                                 (col * SQUARE_SIZE + 3*SQUARE_SIZE//4, row * SQUARE_SIZE + 3*SQUARE_SIZE//4), LINE_WIDTH)
+                pygame.draw.line(screen, RED, (col * SQUARE_SIZE + 3*SQUARE_SIZE//4, row * SQUARE_SIZE + SQUARE_SIZE//4),
+                                 (col * SQUARE_SIZE + SQUARE_SIZE//4, row * SQUARE_SIZE + 3*SQUARE_SIZE//4), LINE_WIDTH)
+            elif board[row][col] == 'O':
+                pygame.draw.circle(screen, BLACK, (col * SQUARE_SIZE + SQUARE_SIZE//2, row * SQUARE_SIZE + SQUARE_SIZE//2), SQUARE_SIZE//3, LINE_WIDTH)
+
+# Перевірка на перемогу
+def check_win(player):
+    # Перевірка рядків
+    for row in range(BOARD_ROWS):
+        if board[row][0] == board[row][1] == board[row][2] == player:
+            return True
+
+    # Перевірка стовпців
+    for col in range(BOARD_COLS):
+        if board[0][col] == board[1][col] == board[2][col] == player:
+            return True
+
+    # Перевірка діагоналей
+    if board[0][0] == board[1][1] == board[2][2] == player:
+        return True
+
+    if board[2][0] == board[1][1] == board[0][2] == player:
+        return True
+
+    return False
+
+# Основна ігрова функція
+def display_message(content):
+    font = pygame.font.Font(None, 80)
+    text = font.render(content, True, BLACK)
+    text_rect = text.get_rect(center=(WIDTH//2, HEIGHT//2))
+    screen.blit(text, text_rect)
+    pygame.display.update()
+    pygame.time.wait(2000)
+
+# Оновлена функція main
+def main():
     screen.fill(WHITE)
-    for row in range(1, 3):
-        pygame.draw.line(screen, BLACK, (0, row * cell_size), (width, row * cell_size), 3)
-        pygame.draw.line(screen, BLACK, (row * cell_size, 0), (row * cell_size, height), 3)
-    
-    for row in range(3):
-        for col in range(3):
-            if board[row][col] == "X":
-                pygame.draw.line(screen, RED, (col * cell_size + 20, row * cell_size + 20), 
-                                ((col + 1) * cell_size - 20, (row + 1) * cell_size - 20), 2)
-                pygame.draw.line(screen, RED, ((col + 1) * cell_size - 20, row * cell_size + 20), 
-                                (col * cell_size + 20, (row + 1) * cell_size - 20), 2)
-            elif board[row][col] == "O":
-                pygame.draw.circle(screen, BLUE, (col * cell_size + cell_size // 2, row * cell_size + cell_size // 2), 
-                                cell_size // 2 - 20, 2)
+    draw_lines()
 
-# Функція для перевірки перемоги
-def check_winner():
-    for row in range(3):
-        if board[row][0] == board[row][1] == board[row][2] and board[row][0] != "":
-            return board[row][0]
-    
-    for col in range(3):
-        if board[0][col] == board[1][col] == board[2][col] and board[0][col] != "":
-            return board[0][col]
+    player = 'X'
+    game_over = False
 
-    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != "":
-        return board[0][0]
-    
-    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != "":
-        return board[0][2]
-    
-    return None
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            if event.type == pygame.MOUSEBUTTONDOWN and not game_over:
+                mouseX = event.pos[0] // SQUARE_SIZE
+                mouseY = event.pos[1] // SQUARE_SIZE
+                
+                if board[mouseY][mouseX] is None:
+                    board[mouseY][mouseX] = player
+                    if check_win(player):
+                        game_over = True
+                        display_message(f"Гравець {player} виграв!")
+                    player = 'O' if player == 'X' else 'X'
 
-# Основний ігровий цикл
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            col, row = x // cell_size, y // cell_size
-            if board[row][col] == "":
-                board[row][col] = current_player
-                winner = check_winner()
-                if winner:
-                    print(f"Переміг гравець {winner}")
-                    pygame.exit()
-                    sys.exit()
-                current_player = "O" if current_player == "X" else "X"
-    
-    draw_board()
-    pygame.display.flip()
+        screen.fill(WHITE)
+        draw_lines()
+        draw_figures()
+        pygame.display.update()
+
+if __name__ == '__main__':
+    main()
