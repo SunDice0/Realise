@@ -20,6 +20,7 @@ RED = (255, 0, 0)
 # Створення вікна
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption('Хрестики-нулики')
+game_over=False
 
 # Ігрова дошка
 board = [[None]*BOARD_COLS for _ in range(BOARD_ROWS)]
@@ -98,11 +99,20 @@ def main():
                     board[mouseY][mouseX] = player
                     if check_win(player):
                         game_over = True
+                        screen.fill(WHITE)
                         display_message(f"Гравець {player} виграв!")
                     player = 'O' if player == 'X' else 'X'
+                else:
+                    screen.fill(WHITE)
+                    display_message("Нічия!")
 
         screen.fill(WHITE)
         draw_lines()
+        draw_figures()
+        pygame.display.update()
+
+if __name__ == '__main__':
+    main()
         draw_figures()
         pygame.display.update()
 
